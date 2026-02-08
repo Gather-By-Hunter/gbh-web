@@ -1,22 +1,22 @@
-import { Category, Id, Package, Product, ProductImage } from "@model/index.ts";
+import { Category, Id, Package, Product, ImageMetadata } from "@model/index.ts";
 
 type IdJoiner = Record<Id, Id[]>;
 
 export class RentalStore {
   private categories: Category[];
   private products: Product[];
-  private images: ProductImage[];
+  private images: ImageMetadata[];
   private packages: Package[];
 
   private categoryProducts: Record<Id, Product[]>;
-  private productImages: Record<Id, ProductImage[]>;
+  private productImages: Record<Id, ImageMetadata[]>;
   private packageProducts: Record<Id, Product[]>;
   private categoryPackages: Record<Id, Package[]>;
 
   constructor(
     categories: Category[],
     products: Product[],
-    images: ProductImage[],
+    images: ImageMetadata[],
     packages: Package[],
     categoryProducts: IdJoiner, // products in categories
     productImages: IdJoiner, // images for products
@@ -42,9 +42,9 @@ export class RentalStore {
       }, {} as Record<Id, T[]>);
     };
 
-    const idToProduct = createIdMap(products, "productId");
-    const idToImage = createIdMap(images, "imageId");
-    const idToPackage = createIdMap(packages, "packageId");
+    const idToProduct = createIdMap(products, "id");
+    const idToImage = createIdMap(images, "id");
+    const idToPackage = createIdMap(packages, "id");
 
     this.categoryProducts = createJoiner(categoryProducts, idToProduct);
     this.productImages = createJoiner(productImages, idToImage);

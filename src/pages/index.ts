@@ -1,4 +1,7 @@
 export * from "./about-us/AboutUs.tsx";
+export * from "./account/index.ts";
+export * from "./admin/index.ts";
+export * from "./auth/index.ts";
 export * from "./collections/Collections.tsx";
 export * from "./home/Home.tsx";
 export * from "./match-your-vibe/MatchYourVibe.tsx";

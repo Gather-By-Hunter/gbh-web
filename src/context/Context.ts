@@ -1,4 +1,24 @@
+import { HttpCommunicator } from "@api/HttpCommunicator.ts";
+import {
+  AuthRepo,
+  CategoryRepo,
+  CollectionRepo,
+  EventTypeRepo,
+  PackageRepo,
+  ProductRepo,
+} from "@repos/index.ts";
+import { Repos } from "@repos/Repos.ts";
+import {
+  AuthService,
+  EventTypeService,
+  CollectionService,
+  CategoryService,
+  PackageService,
+  ProductService,
+} from "@services/index.ts";
+import { Services } from "@services/Services.ts";
 import { HomeStore } from "@stores/home/HomeStore.ts";
+import { PersistanceStore } from "@stores/PersistanceStore.ts";
 import { RentalStore } from "@stores/rental/RentalStore.ts";
 import { Stores } from "@stores/Stores.ts";
 
@@ -8,13 +28,23 @@ const ASSET_BUCKET_URL = import.meta.env.VITE_ASSETS_BUCKET_URL;
 // @ts-ignore
 console.log(import.meta.env);
 
-export class Context {
-  private static _instance: Context | undefined;
+export interface GbhContext {
+  stores: Stores;
+  repos: Repos;
+  services: Services;
+}
 
-  private _stores: Stores;
+export class ContextFactory {
+  private static _instance: ContextFactory | undefined;
+
+  private _context: GbhContext;
 
   constructor() {
-    this._stores = {
+    // @ts-ignore
+    const baseUrl: string = import.meta.env.VITE_API_BASE_URL;
+
+    const stores: Stores = {
+      persistance: new PersistanceStore(),
       rental: new RentalStore([], [], [], [], {}, {}, {}, {}),
       home: new HomeStore([
         {
@@ -79,16 +109,50 @@ export class Context {
         },
       ]),
     };
+
+    const httpCommunicator = new HttpCommunicator(baseUrl, stores.persistance);
+
+    const repos: Repos = {
+      auth: new AuthRepo(httpCommunicator),
+      eventType: new EventTypeRepo(httpCommunicator),
+      collection: new CollectionRepo(httpCommunicator),
+      category: new CategoryRepo(httpCommunicator),
+      package: new PackageRepo(httpCommunicator),
+      product: new ProductRepo(httpCommunicator),
+    };
+
+    const services: Services = {
+      authService: new AuthService(stores.persistance, repos.auth),
+      eventTypeService: new EventTypeService(repos.eventType),
+      collectionService: new CollectionService(repos.collection),
+      categoryService: new CategoryService(repos.category),
+      packageService: new PackageService(repos.package),
+      productService: new ProductService(repos.product),
+    };
+
+    this._context = {
+      stores,
+      repos,
+      services,
+    };
   }
 
-  public static get instance(): Context {
-    if (!Context._instance) {
-      Context._instance = new Context();
+  private static get instance(): ContextFactory {
+    if (!ContextFactory._instance) {
+      ContextFactory._instance = new ContextFactory();
     }
-    return Context._instance;
+    return ContextFactory._instance;
   }
 
-  public stores(): Stores {
-    return this._stores;
+  public static context() {
+    return ContextFactory.instance._context;
+  }
+
+  public static stores() {
+    return ContextFactory.instance._context.stores;
+  }
+
+  public static services() {
+    return ContextFactory.instance._context.services;
   }
 }

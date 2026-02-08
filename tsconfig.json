@@ -11,10 +11,14 @@
     "strict": true,
     "skipLibCheck": true,
     "paths": {
+      "@api/*": ["./src/api/*"],
       "@components/*": ["./src/components/*"],
       "@context/*": ["./src/context/*"],
       "@model/*": ["./src/model/*"],
       "@pages/*": ["./src/pages/*"],
+      "@presenters/*": ["./src/presenters/*"],
+      "@repos/*": ["./src/repos/*"],
+      "@services/*": ["./src/services/*"],
       "@stores/*": ["./src/stores/*"]
     }
   }
