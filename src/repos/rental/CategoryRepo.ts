@@ -7,8 +7,8 @@ export class CategoryRepo extends ModelRepo<Category> {
     super(httpCommunicator, "rental/category", "rental/categories");
   }
 
-  async getSubcategories(categoryId: Id) {
-    return this.getPaginated<Category>(
+  async *getSubcategories(categoryId: Id) {
+    yield* this.getPaginated<Category>(
       `${this.endpoint}/${categoryId}/subcategories`,
     );
   }

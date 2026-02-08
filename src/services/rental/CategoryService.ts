@@ -14,15 +14,15 @@ export class CategoryService extends ModelService<Category, CategoryRepo> {
   }
 
   async *getSubcategories(categoryId: Id): AsyncIterableIterator<Category[]> {
-    return this.repo.getSubcategories(categoryId);
+    yield* this.repo.getSubcategories(categoryId);
   }
 
   async addPackage(modelId: Id, packageId: Id) {
     return this.createAssociation(modelId, packageId, Associations.PACKAGE);
   }
 
-  async getPackages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.PACKAGE);
+  async *getPackages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.PACKAGE);
   }
 
   async deletePackage(modelId: Id, packageId: Id) {
@@ -33,8 +33,8 @@ export class CategoryService extends ModelService<Category, CategoryRepo> {
     return this.createAssociation(modelId, productId, Associations.PRODUCT);
   }
 
-  async getProducts(modelId: Id) {
-    return this.getAssociations(modelId, Associations.PRODUCT);
+  async *getProducts(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.PRODUCT);
   }
 
   async deleteProduct(modelId: Id, productId: Id) {
@@ -45,8 +45,8 @@ export class CategoryService extends ModelService<Category, CategoryRepo> {
     return this.createAssociation(modelId, imageId, Associations.IMAGE);
   }
 
-  async getImages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.IMAGE);
+  async *getImages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.IMAGE);
   }
 
   async deleteImage(modelId: Id, imageId: Id) {

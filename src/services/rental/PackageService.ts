@@ -9,8 +9,8 @@ export class PackageService extends ModelService<Package, PackageRepo> {
     return this.createAssociation(modelId, productId, Associations.PRODUCT);
   }
 
-  async getProducts(modelId: Id) {
-    return this.getAssociations(modelId, Associations.PRODUCT);
+  async *getProducts(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.PRODUCT);
   }
 
   async deleteProduct(modelId: Id, productId: Id) {
@@ -21,8 +21,8 @@ export class PackageService extends ModelService<Package, PackageRepo> {
     return this.createAssociation(modelId, imageId, Associations.IMAGE);
   }
 
-  async getImages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.IMAGE);
+  async *getImages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.IMAGE);
   }
 
   async deleteImage(modelId: Id, imageId: Id) {

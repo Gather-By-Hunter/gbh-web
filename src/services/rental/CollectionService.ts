@@ -12,8 +12,8 @@ export class CollectionService extends ModelService<
     return this.createAssociation(modelId, categoryId, Associations.CATEGORY);
   }
 
-  async getCategories(modelId: Id) {
-    return this.getAssociations(modelId, Associations.CATEGORY);
+  async *getCategories(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.CATEGORY);
   }
 
   async deleteCategory(modelId: Id, categoryId: Id) {
@@ -24,8 +24,8 @@ export class CollectionService extends ModelService<
     return this.createAssociation(modelId, packageId, Associations.PACKAGE);
   }
 
-  async getPackages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.PACKAGE);
+  async *getPackages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.PACKAGE);
   }
 
   async deletePackage(modelId: Id, packageId: Id) {
@@ -36,8 +36,8 @@ export class CollectionService extends ModelService<
     return this.createAssociation(modelId, productId, Associations.PRODUCT);
   }
 
-  async getProducts(modelId: Id) {
-    return this.getAssociations(modelId, Associations.PRODUCT);
+  async *getProducts(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.PRODUCT);
   }
 
   async deleteProduct(modelId: Id, productId: Id) {
@@ -48,8 +48,8 @@ export class CollectionService extends ModelService<
     return this.createAssociation(modelId, imageId, Associations.IMAGE);
   }
 
-  async getImages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.IMAGE);
+  async *getImages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.IMAGE);
   }
 
   async deleteImage(modelId: Id, imageId: Id) {

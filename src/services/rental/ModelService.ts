@@ -18,7 +18,7 @@ export class ModelService<T extends RentalModel, R extends ModelRepo<T>> {
   }
 
   async *getAll(): AsyncIterableIterator<T[]> {
-    return this.repo.getAll();
+    yield* this.repo.getAll();
   }
 
   async delete(modelId: Id) {
@@ -33,8 +33,8 @@ export class ModelService<T extends RentalModel, R extends ModelRepo<T>> {
     return this.repo.createAssociation(modelId, associationId, association);
   }
 
-  protected async getAssociations(modelId: Id, association: Associations) {
-    return this.repo.getAssociations(modelId, association);
+  protected async *getAssociations(modelId: Id, association: Associations) {
+    yield* this.repo.getAssociations(modelId, association);
   }
 
   protected async removeAssociation(

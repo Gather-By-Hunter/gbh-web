@@ -9,8 +9,8 @@ export class ProductService extends ModelService<Product, ProductRepo> {
     return this.createAssociation(modelId, imageId, Associations.IMAGE);
   }
 
-  async getImages(modelId: Id) {
-    return this.getAssociations(modelId, Associations.IMAGE);
+  async *getImages(modelId: Id) {
+    yield* this.getAssociations(modelId, Associations.IMAGE);
   }
 
   async deleteImage(modelId: Id, imageId: Id) {

@@ -48,8 +48,8 @@ export class ModelRepo<T extends RentalModel> {
     return this.httpCommunicator.patch(this.endpoint, model);
   }
 
-  async getAll() {
-    return this.getPaginated<T>(
+  async *getAll() {
+    yield* this.getPaginated<T>(
       this.paginatedEndpoint ? this.paginatedEndpoint : `${this.endpoint}s`,
     );
   }
@@ -59,7 +59,7 @@ export class ModelRepo<T extends RentalModel> {
   }
 
   async *getModels(): AsyncIterableIterator<T[]> {
-    return this.getPaginated<T>(this.endpoint);
+    yield* this.getPaginated<T>(this.endpoint);
   }
 
   async createAssociation(
@@ -76,7 +76,7 @@ export class ModelRepo<T extends RentalModel> {
     modelId: Id,
     association: Associations,
   ): AsyncIterableIterator<Id[]> {
-    return this.getPaginated<Id>(
+    yield* this.getPaginated<Id>(
       `${this.endpoint}/${modelId}/${associationToPlural[association]}s`,
       (lastResult) => lastResult,
     );
