@@ -75,7 +75,7 @@ export const Header = () => {
             style={{
               height: `calc(var(--spacing) * ${14 * (percentScrolled + 1)})`,
             }}
-            className="rounded-full transition-all duration-300 bg-gbh-cream"
+            className="rounded-full transition-all duration-300 bg-gbh-cream shadow-lg"
           />
         </Link>
       </div>

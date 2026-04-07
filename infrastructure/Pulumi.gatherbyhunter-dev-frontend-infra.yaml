@@ -4,4 +4,4 @@ config:
   gather-by-hunter-web:domain: gatherbyhunter.com
   gather-by-hunter-web:subdomain: dev
   gather-by-hunter-web:networkHostedZoneId: Z0234328RYQKDTUN3BJJ
-  gather-by-hunter-web:networkRoleArn: arn:aws:iam::646392674136:role/gatherbyhunter-network-cross-account-role-7419d26
+  gather-by-hunter-web:networkRoleArn: arn:aws:iam::646392674136:role/gbh-web-network-deploy-role

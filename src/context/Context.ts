@@ -110,7 +110,10 @@ export class ContextFactory {
       ]),
     };
 
-    const httpCommunicator = new HttpCommunicator(baseUrl, stores.persistance);
+    const httpCommunicator = new HttpCommunicator(
+      baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
+      stores.persistance,
+    );
 
     const repos: Repos = {
       auth: new AuthRepo(httpCommunicator),

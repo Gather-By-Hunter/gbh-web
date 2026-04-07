@@ -131,7 +131,9 @@ export class HttpCommunicator {
   }
 
   private getUrl(endpoint: string): string {
-    return this.baseUrl + endpoint;
+    return (
+      this.baseUrl + (endpoint.startsWith("/") ? endpoint.slice(1) : endpoint)
+    );
   }
 
   private getParams(

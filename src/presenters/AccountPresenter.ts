@@ -9,8 +9,8 @@ export class AccountPresenter extends ServicePresenter<AccountView> {
   async logout() {
     await this.doAsyncAction(async () => {
       await this.authService.logout();
-      this.view.setUser(null);
       this.view.navigate("/login");
+      this.view.setUser(null);
     });
   }
 

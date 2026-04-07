@@ -1,6 +1,6 @@
 import { RentalModel } from "@model/index.ts";
 import { Id } from "@model/Id.ts";
-import type { Associations, ModelRepo } from "@repos/rental/ModelRepo.ts";
+import type { ModelType, ModelRepo } from "@repos/rental/ModelRepo.ts";
 
 export class ModelService<T extends RentalModel, R extends ModelRepo<T>> {
   constructor(protected repo: R) {}
@@ -28,19 +28,19 @@ export class ModelService<T extends RentalModel, R extends ModelRepo<T>> {
   protected async createAssociation(
     modelId: Id,
     associationId: Id,
-    association: Associations,
+    association: ModelType,
   ) {
     return this.repo.createAssociation(modelId, associationId, association);
   }
 
-  protected async *getAssociations(modelId: Id, association: Associations) {
+  protected async *getAssociations(modelId: Id, association: ModelType) {
     yield* this.repo.getAssociations(modelId, association);
   }
 
   protected async removeAssociation(
     modelId: Id,
     associationId: Id,
-    association: Associations,
+    association: ModelType,
   ) {
     return this.repo.removeAssociation(modelId, associationId, association);
   }

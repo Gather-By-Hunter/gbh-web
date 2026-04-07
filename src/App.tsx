@@ -9,6 +9,7 @@ import {
   PrivacyPolicy,
   Account,
   Register,
+  Admin,
 } from "@pages/index.ts";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -20,6 +21,7 @@ const AppContent: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/account" element={<Account />} />
         <Route path="/collections" element={<Collections />} />
         <Route path="/match-your-vibe" element={<MatchYourVibe />} />

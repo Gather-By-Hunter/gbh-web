@@ -2,7 +2,7 @@ import type { HttpCommunicator } from "@api/HttpCommunicator.ts";
 import type { Id } from "@model/Id.ts";
 import type { RentalModel } from "@model/index.ts";
 
-export enum Associations {
+export enum ModelType {
   EVENT_TYPE = "event-type",
   COLLECTION = "collection",
   CATEGORY = "category",
@@ -11,7 +11,7 @@ export enum Associations {
   IMAGE = "image",
 }
 
-enum PluralAssociations {
+enum PluralModelTypeApi {
   EVENT_TYPES = "event-types",
   COLLECTIONS = "collections",
   CATEGORIES = "categories",
@@ -20,13 +20,13 @@ enum PluralAssociations {
   IMAGES = "images",
 }
 
-const associationToPlural: Record<Associations, string> = {
-  [Associations.EVENT_TYPE]: PluralAssociations.EVENT_TYPES,
-  [Associations.COLLECTION]: PluralAssociations.COLLECTIONS,
-  [Associations.CATEGORY]: PluralAssociations.CATEGORIES,
-  [Associations.PACKAGE]: PluralAssociations.PACKAGES,
-  [Associations.PRODUCT]: PluralAssociations.PRODUCTS,
-  [Associations.IMAGE]: PluralAssociations.IMAGES,
+const associationToPlural: Record<ModelType, PluralModelTypeApi> = {
+  [ModelType.EVENT_TYPE]: PluralModelTypeApi.EVENT_TYPES,
+  [ModelType.COLLECTION]: PluralModelTypeApi.COLLECTIONS,
+  [ModelType.CATEGORY]: PluralModelTypeApi.CATEGORIES,
+  [ModelType.PACKAGE]: PluralModelTypeApi.PACKAGES,
+  [ModelType.PRODUCT]: PluralModelTypeApi.PRODUCTS,
+  [ModelType.IMAGE]: PluralModelTypeApi.IMAGES,
 };
 
 export class ModelRepo<T extends RentalModel> {
@@ -65,7 +65,7 @@ export class ModelRepo<T extends RentalModel> {
   async createAssociation(
     modelId: Id,
     associationId: Id,
-    association: Associations,
+    association: ModelType,
   ) {
     return this.httpCommunicator.put(
       `${this.endpoint}/${modelId}/${association}/${associationId}`,
@@ -74,10 +74,10 @@ export class ModelRepo<T extends RentalModel> {
 
   async *getAssociations(
     modelId: Id,
-    association: Associations,
+    association: ModelType,
   ): AsyncIterableIterator<Id[]> {
     yield* this.getPaginated<Id>(
-      `${this.endpoint}/${modelId}/${associationToPlural[association]}s`,
+      `${this.endpoint}/${modelId}/${associationToPlural[association]}`,
       (lastResult) => lastResult,
     );
   }
@@ -85,7 +85,7 @@ export class ModelRepo<T extends RentalModel> {
   async removeAssociation(
     modelId: Id,
     associationId: Id,
-    association: Associations,
+    association: ModelType,
   ) {
     return this.httpCommunicator.delete(
       `${this.endpoint}/${modelId}/${association}/${associationId}`,
