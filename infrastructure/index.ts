@@ -52,7 +52,7 @@ const certValidationRecord = new aws.route53.Record(
 
 const certValidation = pulumi
   .all([certValidationRecord.fqdn, cert.arn])
-  .apply(([fqdn, certArn]) => {
+  .apply(([fqdn, certArn]: [string, string]) => {
     const certValidation = new aws.acm.CertificateValidation(
       "cert-validation",
       {
@@ -74,7 +74,7 @@ const oai = new aws.cloudfront.OriginAccessIdentity("oai");
 
 new aws.s3.BucketPolicy("bucketPolicy", {
   bucket: bucket.id,
-  policy: pulumi.all([oai.iamArn, bucket.arn]).apply(([oaiArn, bucketArn]) =>
+  policy: pulumi.all([oai.iamArn, bucket.arn]).apply(([oaiArn, bucketArn]: [string, string]) =>
     JSON.stringify({
       Version: "2012-10-17",
       Statement: [

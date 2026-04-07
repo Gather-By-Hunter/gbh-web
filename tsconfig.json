@@ -22,5 +22,6 @@
       "@services/*": ["./src/services/*"],
       "@stores/*": ["./src/stores/*"]
     }
-  }
+  },
+  "exclude": ["infrastructure", "bootstrap", "node_modules", "dist"]
 }
