@@ -56,7 +56,10 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
       - name: Install Infrastructure Dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          pulumi install
+          test -f node_modules/@pulumi/pulumi/package.json
         working-directory: infrastructure
 
       - name: Configure AWS Credentials
