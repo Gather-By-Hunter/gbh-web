@@ -4,42 +4,55 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: Environment to deploy to
         required: true
-        default: 'dev'
+        default: dev
         type: choice
         options:
           - dev
           - prod
+      command:
+        description: Pulumi command to run
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - up
 
 permissions:
-  id-token: write # Required for OIDC
+  id-token: write
   contents: read
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment }}
+    name: ${{ inputs.command }} ${{ inputs.environment }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    
+    environment: ${{ inputs.environment }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.4.0
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: 24
+          cache: pnpm
 
       - name: Install Frontend Dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build Frontend
-        run: npm run build
+        run: pnpm build
 
       - name: Install Infrastructure Dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
         working-directory: infrastructure
 
       - name: Configure AWS Credentials
@@ -53,11 +66,12 @@ jobs:
       - name: Pulumi Login
         run: pulumi login ${{ vars.PULUMI_BACKEND_URL }}
 
-      - name: Pulumi Up
+      - name: Pulumi ${{ inputs.command }}
         uses: pulumi/actions@v6
         with:
-          command: up
+          command: ${{ inputs.command }}
           stack-name: ${{ vars.PULUMI_STACK_NAME }}
           work-dir: infrastructure
+          upsert: false
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
