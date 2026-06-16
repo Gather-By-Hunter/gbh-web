@@ -57,8 +57,7 @@ jobs:
 
       - name: Install Infrastructure Dependencies
         run: |
-          pnpm install --frozen-lockfile
-          pulumi install
+          pnpm install --frozen-lockfile --ignore-workspace --ignore-scripts
           test -f node_modules/@pulumi/pulumi/package.json
         working-directory: infrastructure
 
