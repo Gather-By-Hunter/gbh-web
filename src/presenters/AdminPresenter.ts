@@ -1,208 +1,309 @@
-import type { RentalModel } from "@model/index.ts";
-import { ServicePresenter, PresenterView } from "./ServicePresenter.ts";
-import type { ModelService } from "@services/rental/ModelService.ts";
-import { ModelRepo, ModelType } from "@repos/rental/ModelRepo.ts";
-import { Id } from "@model/Id.ts";
-import { Services } from "@services/Services.ts";
-import { AdminCache } from "@context/react-context/AdminCacheContext.tsx";
-
-const modelNameToDisplayName: Record<ModelType, string> = {
-  [ModelType.EVENT_TYPE]: "Event Type",
-  [ModelType.COLLECTION]: "Collection",
-  [ModelType.CATEGORY]: "Category",
-  [ModelType.PACKAGE]: "Package",
-  [ModelType.PRODUCT]: "Product",
-  [ModelType.IMAGE]: "Image",
-};
-
-export interface ModelDetail {
-  model: RentalModel;
-  associations: Partial<Record<ModelType, RentalModel[]>>;
-}
+import type {
+  MediaMetadata,
+  MediaVersion,
+  PackageProductDisplay,
+  Product,
+  RentalModel,
+  RentalModelUnion,
+} from "@model/index.ts";
+import { ModelType } from "@model/index.ts";
+import type { Id } from "@model/Id.ts";
+import type { Services } from "@services/Services.ts";
+import type { UploadMediaRequest } from "@model/index.ts";
+import type { Stores } from "@context/Context.ts";
+import { PresenterView, ServicePresenter } from "./ServicePresenter.ts";
+import {
+  AdminAssociationCoordinator,
+  AdminHomeMediaCoordinator,
+  AdminMediaCoordinator,
+  AdminModelCache,
+  AdminModelLoader,
+  AdminModelServices,
+  AdminSearchCoordinator,
+  createAdminCreatePresenter,
+  getAdminModelAssociationTypes,
+  getAdminModelSingularName,
+  getAdminModelPluralName,
+  type CreatePresenter,
+} from "./admin/index.ts";
 
 export interface AdminView extends PresenterView {
-  setModels: (models: RentalModel[]) => void;
-  setSelectedModelDetail: (detail: ModelDetail | null) => void;
+  setModelMedia: (type: ModelType, modelId: Id, media: MediaMetadata[]) => void;
+  setMediaVersions: (mediaId: Id, versions: MediaVersion[]) => void;
+  setAllModels: (type: ModelType, models: RentalModel[]) => void;
+  setSelectedModel: (model: RentalModelUnion | null) => void;
+  updateModelInList: (type: ModelType, model: RentalModel) => void;
+  removeModelFromList: (type: ModelType, modelId: Id) => void;
+  addModelToList: (type: ModelType, model: RentalModel) => void;
   updateAssociatedModels: (type: ModelType, models: RentalModel[]) => void;
   setSearchResults: (type: ModelType, models: RentalModel[]) => void;
   setLoading: (loading: boolean) => void;
 }
 
 export class AdminPresenter extends ServicePresenter<AdminView> {
+  private readonly cache: AdminModelCache;
+  private readonly modelServices: AdminModelServices;
+  private readonly mediaCoordinator: AdminMediaCoordinator;
+  private readonly homeMediaCoordinator: AdminHomeMediaCoordinator;
+  private readonly associationCoordinator: AdminAssociationCoordinator;
+  private readonly searchCoordinator: AdminSearchCoordinator;
+  private readonly modelLoader: AdminModelLoader;
+
   constructor(
-    services: Services,
+    private readonly services: Services,
+    stores: Stores,
     view: AdminView,
-    private cache: React.MutableRefObject<AdminCache>,
   ) {
-    super(services, view);
+    super(services, stores, view);
+    this.cache = new AdminModelCache();
+    this.modelServices = new AdminModelServices(services);
+    this.mediaCoordinator = new AdminMediaCoordinator(
+      services,
+      view,
+      this.cache,
+      this.modelServices,
+    );
+    this.homeMediaCoordinator = new AdminHomeMediaCoordinator(
+      services,
+      view,
+      this.cache,
+    );
+    this.associationCoordinator = new AdminAssociationCoordinator(
+      view,
+      this.cache,
+      this.modelServices,
+      this.mediaCoordinator,
+    );
+    this.searchCoordinator = new AdminSearchCoordinator(view, this.cache);
+    this.modelLoader = new AdminModelLoader(
+      view,
+      this.cache,
+      this.modelServices,
+      this.mediaCoordinator,
+      this.homeMediaCoordinator,
+    );
   }
 
-  private getCacheKey(type: ModelType, id: Id): string {
-    return `${type}:${id}`;
-  }
-
-  async getModels(modelType: ModelType) {
+  async onMount(): Promise<void> {
     this.view.setLoading(true);
-    await this.doAsyncAction(async () => {
-      const service = this.getServiceForModel(modelType);
-      const allModels: RentalModel[] = [];
-      for await (const models of service.getAll()) {
-        allModels.push(...models);
-        // Cache these models as we get them
-        models.forEach((m) =>
-          this.cache.current.modelCache.set(this.getCacheKey(modelType, m.id), m),
-        );
-      }
-      this.cache.current.allModelsCache.set(modelType, allModels);
-      this.view.setModels(allModels);
-    });
+    await this.loadAllModels();
     this.view.setLoading(false);
   }
 
-  async searchModels(modelType: ModelType, query: string) {
+  async loadAllModels(): Promise<void> {
     await this.doAsyncAction(async () => {
-      let allModels = this.cache.current.allModelsCache.get(modelType);
-
-      if (!allModels) {
-        const service = this.getServiceForModel(modelType);
-        allModels = [];
-        for await (const models of service.getAll()) {
-          allModels.push(...models);
-          models.forEach((m) =>
-            this.cache.current.modelCache.set(this.getCacheKey(modelType, m.id), m),
-          );
-        }
-        this.cache.current.allModelsCache.set(modelType, allModels);
-      }
-
-      const filtered = allModels.filter((m) =>
-        m.name.toLowerCase().includes(query.toLowerCase()),
-      );
-
-      this.view.setSearchResults(modelType, filtered);
+      await this.modelLoader.loadAllModels();
     });
   }
 
-  async getModelDetail(modelType: ModelType, id: Id) {
-    this.view.setLoading(true);
+  async updateModel(type: ModelType, model: RentalModel): Promise<void> {
     await this.doAsyncAction(async () => {
-      const service = this.getServiceForModel(modelType);
-      const model = await service.get(id);
-
-      if (!model) {
-        this.view.displayError("Model not found");
+      if (type === ModelType.HOME_MEDIA) {
+        this.view.displayMessage("Home media updates not yet implemented");
         return;
       }
 
-      this.cache.current.modelCache.set(this.getCacheKey(modelType, id), model);
+      const service = this.modelServices.getService(type);
+      await service.update(model);
+      const updatedModel = await service.get(model.id);
+      updatedModel.type = type;
+      this.cache.set(type, updatedModel);
+      this.view.updateModelInList(type, updatedModel);
+      this.view.displayMessage(
+        `${getAdminModelSingularName(type)} updated successfully`,
+      );
+    });
+  }
 
-      const associations: Partial<Record<ModelType, RentalModel[]>> = {};
-      const associationTypes = this.getAssociationTypesForModel(modelType);
-
-      // Initialize associations with empty arrays
-      for (const type of associationTypes) {
-        associations[type] = [];
+  async deleteModel(type: ModelType, modelId: Id): Promise<void> {
+    await this.doAsyncAction(async () => {
+      if (type === ModelType.HOME_MEDIA) {
+        await this.homeMediaCoordinator.removeHomeMedia(modelId);
+        this.view.displayMessage("Home media removed successfully");
+        return;
       }
 
-      this.view.setSelectedModelDetail({ model, associations });
+      const service = this.modelServices.getService(type);
+      await service.delete(modelId);
+      this.cache.delete(type, modelId);
+      this.view.removeModelFromList(type, modelId);
+      this.view.displayMessage(
+        `${getAdminModelSingularName(type)} deleted successfully`,
+      );
+    });
+  }
 
-      // Fetch associations lazily
-      for (const type of associationTypes) {
-        // @ts-ignore
-        const iterator = service[`get${this.getPluralName(type)}`](id);
-        for await (const idChunk of iterator) {
-          const fetchedModels: RentalModel[] = [];
-          for (const assocId of idChunk) {
-            const cacheKey = this.getCacheKey(type, assocId);
-            if (this.cache.current.modelCache.has(cacheKey)) {
-              fetchedModels.push(this.cache.current.modelCache.get(cacheKey)!);
-            } else {
-              try {
-                const assocModel = await this.getServiceForModel(type).get(assocId);
-                if (assocModel) {
-                  this.cache.current.modelCache.set(cacheKey, assocModel);
-                  fetchedModels.push(assocModel);
-                }
-              } catch (e) {
-                console.error(`Failed to fetch ${type} with id ${assocId}`, e);
-              }
-            }
-          }
-          this.view.updateAssociatedModels(type, fetchedModels);
+  async selectModel(type: ModelType, modelId: Id): Promise<void> {
+    await this.doAsyncAction(async () => {
+      if (type === ModelType.HOME_MEDIA) {
+        await this.homeMediaCoordinator.selectHomeMedia(modelId);
+        return;
+      }
+
+      const service = this.modelServices.getService(type);
+      const model = await service.get(modelId);
+      model.type = type;
+      this.cache.set(type, model);
+      this.view.setSelectedModel(model as RentalModelUnion);
+
+      if (type === ModelType.MEDIA) {
+        await this.mediaCoordinator.fetchVersions(modelId);
+      }
+
+      for (const associationType of getAdminModelAssociationTypes(type)) {
+        await this.associationCoordinator.loadAssociations(
+          modelId,
+          type,
+          associationType,
+        );
+
+        if (associationType === ModelType.MEDIA) {
+          await this.mediaCoordinator.fetchAndSetMedia(type, modelId);
         }
       }
     });
-    this.view.setLoading(false);
   }
 
-  private getServiceForModel(
+  async loadAssociations(
+    modelId: Id,
     modelType: ModelType,
-  ): ModelService<RentalModel, ModelRepo<RentalModel>> {
-    switch (modelType) {
-      case ModelType.EVENT_TYPE:
-        return this.eventTypeService;
-      case ModelType.COLLECTION:
-        return this.collectionService;
-      case ModelType.CATEGORY:
-        return this.categoryService;
-      case ModelType.PACKAGE:
-        return this.packageService;
-      case ModelType.PRODUCT:
-        return this.productService;
-      default:
-        throw new Error(`Unsupported model type: ${modelType}`);
+    associationType: ModelType,
+  ): Promise<void> {
+    await this.doAsyncAction(async () => {
+      await this.associationCoordinator.loadAssociations(
+        modelId,
+        modelType,
+        associationType,
+      );
+    });
+  }
+
+  async addAssociation(
+    modelId: Id,
+    modelType: ModelType,
+    associationId: Id,
+    associationType: ModelType,
+  ): Promise<void> {
+    await this.doAsyncAction(async () => {
+      await this.associationCoordinator.addAssociation(
+        modelId,
+        modelType,
+        associationId,
+        associationType,
+      );
+      this.view.displayMessage("Association added successfully");
+    });
+  }
+
+  async removeAssociation(
+    modelId: Id,
+    modelType: ModelType,
+    associationId: Id,
+    associationType: ModelType,
+  ): Promise<void> {
+    await this.doAsyncAction(async () => {
+      await this.associationCoordinator.removeAssociation(
+        modelId,
+        modelType,
+        associationId,
+        associationType,
+      );
+      this.view.displayMessage("Association removed successfully");
+    });
+  }
+
+  async getPackageProducts(packageId: Id): Promise<PackageProductDisplay[]> {
+    const packageProducts =
+      await this.services.packageService.getPackageProducts(packageId);
+    const displays: PackageProductDisplay[] = [];
+
+    for (const packageProduct of packageProducts) {
+      const cached = this.cache.get(
+        ModelType.PRODUCT,
+        packageProduct.productId,
+      );
+      const product =
+        cached !== undefined
+          ? (cached as Product)
+          : await this.services.productService.get(packageProduct.productId);
+      product.type = ModelType.PRODUCT;
+      this.cache.set(ModelType.PRODUCT, product);
+      displays.push({ ...packageProduct, product });
+    }
+
+    return displays;
+  }
+
+  async setPackageProductQuantity(
+    packageId: Id,
+    productId: Id,
+    quantity: number,
+  ): Promise<PackageProductDisplay[]> {
+    await this.doAsyncAction(async () => {
+      await this.services.packageService.setPackageProductQuantity(
+        packageId,
+        productId,
+        quantity,
+      );
+      this.view.displayMessage("Package product saved successfully");
+    });
+
+    return this.getPackageProducts(packageId);
+  }
+
+  async removePackageProduct(
+    packageId: Id,
+    productId: Id,
+  ): Promise<PackageProductDisplay[]> {
+    await this.doAsyncAction(async () => {
+      await this.services.packageService.deletePackageProduct(
+        packageId,
+        productId,
+      );
+      this.view.displayMessage("Package product removed successfully");
+    });
+
+    return this.getPackageProducts(packageId);
+  }
+
+  async searchModels(type: ModelType, query: string): Promise<void> {
+    await this.doAsyncAction(async () => {
+      this.searchCoordinator.searchModels(type, query);
+    });
+  }
+
+  async uploadMedia(request: UploadMediaRequest): Promise<MediaMetadata> {
+    try {
+      const media = await this.mediaCoordinator.uploadMedia(request);
+      this.view.displayMessage("Media uploaded successfully");
+      return media;
+    } catch (error) {
+      this.handleError(error);
+      if (error instanceof Error) throw error;
+      throw new Error("Failed to upload media");
     }
   }
 
-  private getAssociationTypesForModel(modelType: ModelType): ModelType[] {
-    switch (modelType) {
-      case ModelType.EVENT_TYPE:
-        return [
-          ModelType.COLLECTION,
-          ModelType.CATEGORY,
-          ModelType.PACKAGE,
-          ModelType.PRODUCT,
-          ModelType.IMAGE,
-        ];
-      case ModelType.COLLECTION:
-        return [
-          ModelType.CATEGORY,
-          ModelType.PACKAGE,
-          ModelType.PRODUCT,
-          ModelType.IMAGE,
-        ];
-      case ModelType.CATEGORY:
-        return [
-          ModelType.CATEGORY, // subcategories
-          ModelType.PACKAGE,
-          ModelType.PRODUCT,
-          ModelType.IMAGE,
-        ];
-      case ModelType.PACKAGE:
-        return [ModelType.PRODUCT, ModelType.IMAGE];
-      case ModelType.PRODUCT:
-        return [ModelType.IMAGE];
-      default:
-        return [];
-    }
+  async reorderHomeMedia(ids: Id[]): Promise<void> {
+    await this.doAsyncAction(async () => {
+      await this.homeMediaCoordinator.reorderHomeMedia(ids);
+      this.view.displayMessage("Home media reordered successfully");
+    });
   }
 
-  private getPluralName(type: ModelType): string {
-    switch (type) {
-      case ModelType.EVENT_TYPE:
-        return "EventTypes";
-      case ModelType.COLLECTION:
-        return "Collections";
-      case ModelType.CATEGORY:
-        return "Categories";
-      case ModelType.PACKAGE:
-        return "Packages";
-      case ModelType.PRODUCT:
-        return "Products";
-      case ModelType.IMAGE:
-        return "Images";
-      default:
-        return "";
-    }
+  createPresenterFor(type: ModelType): CreatePresenter | null {
+    return createAdminCreatePresenter(type, this.services);
+  }
+
+  getAssociationTypesForModel(type: ModelType): ModelType[] {
+    return getAdminModelAssociationTypes(type);
+  }
+
+  static getModelTypeDisplayName(type: ModelType): string {
+    return getAdminModelPluralName(type);
+  }
+
+  static getSingularDisplayName(type: ModelType): string {
+    return getAdminModelSingularName(type);
   }
 }

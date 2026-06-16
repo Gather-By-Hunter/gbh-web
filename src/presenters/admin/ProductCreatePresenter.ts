@@ -1,7 +1,13 @@
-import { CreatePresenter, CreateField } from "./CreatePresenter.ts";
-import { ModelType } from "@repos/rental/ModelRepo.ts";
+import {
+  CreatePresenter,
+  CreateField,
+  CreateFormData,
+  getTags,
+  getRequiredNumber,
+  getRequiredString,
+} from "./CreatePresenter.ts";
 import { Services } from "@services/Services.ts";
-import { Product } from "@model/index.ts";
+import { ModelType } from "@model/index.ts";
 import { Id } from "@model/Id.ts";
 
 export class ProductCreatePresenter implements CreatePresenter {
@@ -10,35 +16,56 @@ export class ProductCreatePresenter implements CreatePresenter {
   getFields(): CreateField[] {
     return [
       { name: "name", displayName: "Name", type: "string", required: true },
-      { name: "description", displayName: "Description", type: "text", required: true },
-      { name: "price", displayName: "Price ($)", type: "number", required: true },
+      {
+        name: "description",
+        displayName: "Description",
+        type: "text",
+        required: true,
+      },
+      { name: "price", displayName: "Price", type: "number", required: true },
+      {
+        name: "totalQuantity",
+        displayName: "Quantity",
+        type: "number",
+        required: true,
+      },
+      { name: "tags", displayName: "Tags", type: "tags" },
     ];
   }
 
   getAllowedAssociations(): ModelType[] {
-    return [ModelType.IMAGE];
+    return [ModelType.MEDIA];
   }
 
-  validate(data: any): string | null {
+  validate(data: CreateFormData): string | null {
     if (!data.name) return "Name is required";
     if (!data.description) return "Description is required";
-    if (data.price === undefined || data.price < 0) return "Valid price is required";
+    if (typeof data.price !== "number" || data.price < 0)
+      return "Valid price is required";
+    if (typeof data.totalQuantity !== "number" || data.totalQuantity < 0)
+      return "Valid quantity is required";
     return null;
   }
 
-  async create(data: any, associations: Partial<Record<ModelType, Id[]>>): Promise<void> {
-    const product: Omit<Product, "id"> = {
-      name: data.name,
-      description: data.description,
-      price: data.price,
+  async create(
+    data: CreateFormData,
+    associations: Partial<Record<ModelType, Id[]>>,
+  ): Promise<void> {
+    const product = {
+      name: getRequiredString(data, "name"),
+      description: getRequiredString(data, "description"),
+      price: getRequiredNumber(data, "price"),
+      totalQuantity: getRequiredNumber(data, "totalQuantity"),
+      tags: getTags(data),
     };
 
-    const result = await this.services.productService.create(product);
-    const productId = (result as any).id;
+    const { id: productId } =
+      await this.services.productService.create(product);
 
-    if (associations[ModelType.IMAGE]) {
-      for (const imageId of associations[ModelType.IMAGE]!) {
-        await this.services.productService.addImage(productId, imageId);
+    const media = associations[ModelType.MEDIA];
+    if (media) {
+      for (const imageId of media) {
+        await this.services.productService.addMedia(productId, imageId);
       }
     }
   }

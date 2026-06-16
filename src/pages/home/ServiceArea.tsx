@@ -1,4 +1,4 @@
-import { Image } from "@components/index.ts";
+import { Media } from "@components/index.ts";
 
 export const ServiceArea = () => (
   <div className="h-full w-full p-5 mt-5">
@@ -15,7 +15,7 @@ export const ServiceArea = () => (
     </div>
     <div className="flex h-[600px] items-center justify-center">
       <div className="relative z-10 h-5/6 w-3/5">
-        <Image
+        <Media
           src="/photos/home/service-locations.jpeg"
           className="h-full w-full object-cover rounded-lg shadow-lg"
         />

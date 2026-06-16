@@ -1,3 +1,4 @@
+export * from "./AdminAuthService.ts";
 export * from "./AuthService.ts";
 export * from "./Services.ts";
 

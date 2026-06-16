@@ -1,4 +1,4 @@
-import type { UserData } from "@model/index.ts";
+import type { UserData, IdLess } from "@model/index.ts";
 import type { AuthRepo } from "@repos/index.ts";
 import type { PersistanceStore } from "@stores/PersistanceStore.ts";
 
@@ -6,43 +6,24 @@ export class AuthService {
   constructor(
     private persistanceStore: PersistanceStore,
     private repo: AuthRepo,
-  ) {
-    const authToken = this.persistanceStore.getAuthToken();
+  ) {}
 
-    if (!authToken) {
-      return;
-    }
-
-    // try to refresh token on startup
-    // if refresh fails (most likely token
-    // has already expired) clear token
-    this.refresh().catch(() => {
-      this.persistanceStore.clearAuthToken();
-    });
+  async register(user: IdLess<UserData>, password: string): Promise<void> {
+    await this.repo.register(user, password);
   }
 
-  async register(user: Omit<UserData, "id">, password: string) {
-    const authToken = await this.repo.register(user, password);
-
-    this.persistanceStore.setAuthToken(authToken);
-  }
-
-  async login(email: string, password: string) {
-    const authToken = await this.repo.login(email, password);
-
-    this.persistanceStore.setAuthToken(authToken);
+  async login(email: string, password: string): Promise<void> {
+    await this.repo.login(email, password);
   }
 
   async logout() {
     await this.repo.logout();
 
-    this.persistanceStore.clearAuthToken();
+    this.persistanceStore.clearUser();
   }
 
-  async refresh() {
-    const authToken = await this.repo.refresh();
-
-    this.persistanceStore.setAuthToken(authToken);
+  async refresh(): Promise<void> {
+    await this.repo.refresh();
   }
 
   async getUser() {
@@ -51,7 +32,7 @@ export class AuthService {
     return user;
   }
 
-  async updateUser(user: Partial<Omit<UserData, "id">>, password?: string) {
+  async updateUser(user: Partial<IdLess<UserData>>, password?: string) {
     await this.repo.updateUser(user, password);
   }
 }

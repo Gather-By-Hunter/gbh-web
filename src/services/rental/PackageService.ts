@@ -1,31 +1,34 @@
-import { Package } from "@model/index.ts";
+import { Package, ModelType } from "@model/index.ts";
 import { ModelService } from "./ModelService.ts";
 import { Id } from "@model/Id.ts";
 import { PackageRepo } from "@repos/rental/PackageRepo.ts";
-import { ModelType } from "@repos/rental/ModelRepo.ts";
 
 export class PackageService extends ModelService<Package, PackageRepo> {
-  async addProduct(modelId: Id, productId: Id) {
-    return this.createAssociation(modelId, productId, ModelType.PRODUCT);
+  async getPackageProducts(modelId: Id) {
+    return this.repo.getPackageProducts(modelId);
   }
 
-  async *getProducts(modelId: Id) {
-    yield* this.getAssociations(modelId, ModelType.PRODUCT);
+  async setPackageProductQuantity(
+    modelId: Id,
+    productId: Id,
+    quantity: number,
+  ) {
+    return this.repo.setPackageProductQuantity(modelId, productId, quantity);
   }
 
-  async deleteProduct(modelId: Id, productId: Id) {
-    return this.removeAssociation(modelId, productId, ModelType.PRODUCT);
+  async deletePackageProduct(modelId: Id, productId: Id) {
+    return this.repo.removePackageProduct(modelId, productId);
   }
 
-  async addImage(modelId: Id, imageId: Id) {
-    return this.createAssociation(modelId, imageId, ModelType.IMAGE);
+  async addMedia(modelId: Id, imageId: Id) {
+    return this.createAssociation(modelId, imageId, ModelType.MEDIA);
   }
 
-  async *getImages(modelId: Id) {
-    yield* this.getAssociations(modelId, ModelType.IMAGE);
+  async *getMedia(modelId: Id) {
+    yield* this.getAssociations(modelId, ModelType.MEDIA);
   }
 
-  async deleteImage(modelId: Id, imageId: Id) {
-    return this.removeAssociation(modelId, imageId, ModelType.IMAGE);
+  async deleteMedia(modelId: Id, imageId: Id) {
+    return this.removeAssociation(modelId, imageId, ModelType.MEDIA);
   }
 }

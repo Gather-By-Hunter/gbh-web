@@ -1,5 +1,3 @@
-import { PersistanceStore } from "@stores/PersistanceStore.ts";
-
 enum HttpErrorType {
   BAD_REQUEST = "Bad Request",
   UNAUTHORIZED = "Unauthorized",
@@ -17,66 +15,49 @@ export class HttpError extends Error {
   }
 }
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return "Request failed";
+};
+
 export class HttpCommunicator {
-  private authToken: string | null;
-  private authTokenSubscriptionId: string;
+  /**
+   * @param baseUrl The base API URL, expected to be formatted WITHOUT a trailing slash.
+   */
+  constructor(private baseUrl: string) {}
 
-  constructor(
-    private baseUrl: string,
-    private persistanceStore: PersistanceStore,
-  ) {
-    this.authTokenSubscriptionId = this.persistanceStore.subscribeToAuthToken(
-      (authToken) => {
-        this.authToken = authToken;
-      },
-    );
+  // Should be called if the communicator is ever disposed,
+  // though it typically lives for the app lifecycle.
+  public dispose() {}
 
-    this.authToken = this.persistanceStore.getAuthToken();
-  }
-
-  private async apiCall<T>(
+  private async apiCall<T, B = unknown>(
     method: "POST" | "PUT" | "DELETE" | "GET" | "PATCH",
     endpoint: string,
-    req: any,
+    req?: B,
     headers?: Record<string, string>,
-  ): Promise<T> {
-    if (headers && req) {
-      headers = {
-        "Content-type": "application/json",
-        ...headers,
-      };
-    } else if (req) {
-      headers = {
-        "Content-type": "application/json",
-      };
-    } else if (!headers) {
-      headers = {};
-    }
-
-    if (this.authToken) {
-      headers.Authorization = `Bearer ${this.authToken}`;
-    }
+  ): Promise<T | void> {
+    headers = {
+      ...headers,
+      ...(req ? { "Content-type": "application/json" } : {}),
+    };
 
     const url = this.getUrl(endpoint);
 
     const params = this.getParams(
       method,
       headers,
-      // @ts-ignore
-      req ? JSON.stringify(req) : req,
+      req ? JSON.stringify(req) : undefined,
     );
 
     try {
       const resp: Response = await fetch(url, params);
 
       if (resp.ok) {
-        let response: T = undefined as T;
-
         if (resp.headers.get("content-type")?.includes("application/json")) {
-          response = (await resp.json()) as T;
+          return (await resp.json()) as T;
         }
 
-        return response;
+        return;
       } else {
         const errorMessage = await resp.text();
 
@@ -87,7 +68,7 @@ export class HttpCommunicator {
     } catch (error) {
       if (error instanceof HttpError) throw error;
 
-      throw new HttpError((error as Error).message, HttpErrorType.REQUEST);
+      throw new HttpError(getErrorMessage(error), HttpErrorType.REQUEST);
     }
   }
 
@@ -95,45 +76,89 @@ export class HttpCommunicator {
     endpoint: string,
     headers?: Record<string, string>,
   ): Promise<T> {
-    return this.apiCall<T>("GET", endpoint, undefined, headers);
+    const response = await this.apiCall<T>("GET", endpoint, undefined, headers);
+    if (response === undefined) {
+      throw new HttpError("Expected JSON response", HttpErrorType.UNKNOWN);
+    }
+    return response;
   }
 
-  public async post<T>(
+  public async post<B = unknown>(
     endpoint: string,
-    req?: any,
+    req?: B,
     headers?: Record<string, string>,
-  ): Promise<T> {
-    return this.apiCall<T>("POST", endpoint, req, headers);
-  }
-
-  public async put<T>(
+  ): Promise<void>;
+  public async post<T, B = unknown>(
     endpoint: string,
-    req?: any,
+    req?: B,
     headers?: Record<string, string>,
-  ): Promise<T> {
-    return this.apiCall<T>("PUT", endpoint, req, headers);
-  }
-
-  public async patch<T>(
+  ): Promise<T>;
+  public async post<T, B = unknown>(
     endpoint: string,
-    req?: any,
+    req?: B,
     headers?: Record<string, string>,
-  ): Promise<T> {
-    return this.apiCall<T>("PATCH", endpoint, req, headers);
+  ): Promise<T | void> {
+    return this.apiCall<T, B>("POST", endpoint, req, headers);
   }
 
+  public async put<B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<void>;
+  public async put<T, B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<T>;
+  public async put<T, B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<T | void> {
+    return this.apiCall<T, B>("PUT", endpoint, req, headers);
+  }
+
+  public async patch<B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<void>;
+  public async patch<T, B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<T>;
+  public async patch<T, B = unknown>(
+    endpoint: string,
+    req?: B,
+    headers?: Record<string, string>,
+  ): Promise<T | void> {
+    return this.apiCall<T, B>("PATCH", endpoint, req, headers);
+  }
+
+  public async delete(
+    endpoint: string,
+    headers?: Record<string, string>,
+  ): Promise<void>;
   public async delete<T>(
     endpoint: string,
-    req?: any,
     headers?: Record<string, string>,
-  ): Promise<T> {
-    return this.apiCall<T>("DELETE", endpoint, req, headers);
+  ): Promise<T>;
+  public async delete<T>(
+    endpoint: string,
+    headers?: Record<string, string>,
+  ): Promise<T | void> {
+    return this.apiCall<T>("DELETE", endpoint, undefined, headers);
   }
 
   private getUrl(endpoint: string): string {
-    return (
-      this.baseUrl + (endpoint.startsWith("/") ? endpoint.slice(1) : endpoint)
-    );
+    // baseUrl is guaranteed to NOT have a trailing slash.
+    // Ensure endpoint starts with a slash.
+    const normalizedEndpoint = endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
+    return this.baseUrl + normalizedEndpoint;
   }
 
   private getParams(
@@ -141,7 +166,7 @@ export class HttpCommunicator {
     headers?: Record<string, string>,
     body?: BodyInit,
   ): RequestInit {
-    const params: RequestInit = { method: method };
+    const params: RequestInit = { method: method, credentials: "include" };
 
     if (headers) {
       params.headers = headers;

@@ -1,8 +1,7 @@
-import { Category } from "@model/index.ts";
+import { Category, ModelType } from "@model/index.ts";
 import { ModelService } from "./ModelService.ts";
 import { Id } from "@model/Id.ts";
 import { CategoryRepo } from "@repos/rental/CategoryRepo.ts";
-import { ModelType } from "@repos/rental/ModelRepo.ts";
 
 export class CategoryService extends ModelService<Category, CategoryRepo> {
   async addSubcategory(categoryId: Id, subcategoryId: Id) {
@@ -41,15 +40,15 @@ export class CategoryService extends ModelService<Category, CategoryRepo> {
     return this.removeAssociation(modelId, productId, ModelType.PRODUCT);
   }
 
-  async addImage(modelId: Id, imageId: Id) {
-    return this.createAssociation(modelId, imageId, ModelType.IMAGE);
+  async addMedia(modelId: Id, imageId: Id) {
+    return this.createAssociation(modelId, imageId, ModelType.MEDIA);
   }
 
-  async *getImages(modelId: Id) {
-    yield* this.getAssociations(modelId, ModelType.IMAGE);
+  async *getMedia(modelId: Id) {
+    yield* this.getAssociations(modelId, ModelType.MEDIA);
   }
 
-  async deleteImage(modelId: Id, imageId: Id) {
-    return this.removeAssociation(modelId, imageId, ModelType.IMAGE);
+  async deleteMedia(modelId: Id, imageId: Id) {
+    return this.removeAssociation(modelId, imageId, ModelType.MEDIA);
   }
 }

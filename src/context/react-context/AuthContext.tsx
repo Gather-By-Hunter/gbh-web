@@ -1,6 +1,16 @@
 import { User } from "@model/index.ts";
-import { PersistanceStore } from "@stores/PersistanceStore.ts";
-import { createContext, ReactNode, useState } from "react";
+import { AuthContextPresenter } from "@presenters/AuthContextPresenter.ts";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { AppContext } from "./AppContext.tsx";
+import { displayError, displayMessage } from "@pages/common.ts";
+import { useNavigate } from "react-router-dom";
+import { useStore } from "@stores/useStore.ts";
 
 export interface AuthContextType {
   user: User | null;
@@ -13,24 +23,44 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const persistanceStore = new PersistanceStore();
+  const { services, stores } = useContext(AppContext);
+  const navigate = useNavigate();
 
-  const [user, setUser] = useState<User | null>(() => {
-    return persistanceStore.getUser();
-  });
+  // Sync with the persistence store
+  const persistanceStore = useStore(stores.persistance);
+
+  const [user, setUser] = useState<User | null>(() =>
+    persistanceStore.getUser(),
+  );
+
+  const [presenter] = useState(
+    () =>
+      new AuthContextPresenter(services, stores, {
+        setUser,
+        displayError,
+        displayMessage,
+        navigate,
+      }),
+  );
+
+  useEffect(() => {
+    presenter.onMount();
+
+    return () => presenter.onUnmount();
+  }, [presenter]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        setUser: (user: User | null) => {
-          if (user) {
-            persistanceStore.setUser(user);
+        setUser: (newUser: User | null) => {
+          if (newUser) {
+            stores.persistance.setUser(newUser);
           } else {
-            persistanceStore.clearUser();
+            stores.persistance.clearUser();
           }
 
-          setUser(user);
+          setUser(newUser);
         },
       }}
     >

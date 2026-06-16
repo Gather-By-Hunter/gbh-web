@@ -16,34 +16,35 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "packageManager": "pnpm@11.4.0",
   "bugs": {
     "url": "https://github.com/Gather-By-Hunter/gbh-web/issues"
   },
   "homepage": "https://github.com/Gather-By-Hunter/gbh-web#readme",
   "description": "",
   "dependencies": {
-    "libphonenumber-js": "^1.12.41",
-    "lucide-react": "^1.7.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.14.0",
+    "libphonenumber-js": "^1.13.6",
+    "lucide-react": "^1.18.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.17.0",
     "sonner": "^2.0.7",
-    "swiper": "^12.1.3"
+    "swiper": "^12.2.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/node": "^25.5.2",
-    "@types/react": "^19.2.14",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "baseline-browser-mapping": "^2.10.15",
-    "globals": "^17.4.0",
-    "prettier": "^3.8.1",
-    "tailwindcss": "^4.2.2",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "baseline-browser-mapping": "^2.10.37",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.4",
+    "tailwindcss": "^4.3.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
     "vite-tsconfig-paths": "^6.1.1"
   }
 }

@@ -5,11 +5,13 @@ import {
   EventTypeService,
   PackageService,
   ProductService,
+  MediaService,
   Services,
 } from "@services/index.ts";
 import { ToastID } from "./types.ts";
 import { HttpError } from "@api/HttpCommunicator.ts";
 import { User } from "@model/index.ts";
+import { Stores } from "@context/Context.ts";
 
 export interface PresenterView {
   displayError: (
@@ -44,9 +46,11 @@ export class ServicePresenter<V extends PresenterView = PresenterView> {
   protected categoryService: CategoryService;
   protected packageService: PackageService;
   protected productService: ProductService;
+  protected mediaService: MediaService;
 
   constructor(
     services: Services,
+    protected stores: Stores,
     protected view: V,
   ) {
     this.authService = services.authService;
@@ -55,6 +59,7 @@ export class ServicePresenter<V extends PresenterView = PresenterView> {
     this.categoryService = services.categoryService;
     this.packageService = services.packageService;
     this.productService = services.productService;
+    this.mediaService = services.mediaService;
   }
 
   protected doAction<T = unknown>(action: () => T) {

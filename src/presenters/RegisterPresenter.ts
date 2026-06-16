@@ -1,6 +1,8 @@
-import { User } from "@model/index.ts";
-import { PresenterError, ServicePresenter } from "./ServicePresenter.ts";
+import { Services } from "@services/index.ts";
 import { AuthPresenter, AuthView } from "./AuthPresenter.ts";
+import { ServicePresenter } from "./ServicePresenter.ts";
+import { Stores } from "@context/Context.ts";
+import { User } from "@model/authentication/User.ts";
 
 export type RegisterData = {
   firstName: string;
@@ -15,6 +17,10 @@ export class RegisterPresenter
   extends ServicePresenter<AuthView>
   implements AuthPresenter<RegisterData>
 {
+  constructor(services: Services, stores: Stores, view: AuthView) {
+    super(services, stores, view);
+  }
+
   async onSubmit({
     firstName: rawFirstName,
     lastName: rawLastName,
@@ -24,78 +30,66 @@ export class RegisterPresenter
     passwordConfirmation,
   }: RegisterData): Promise<void> {
     await this.doAsyncAction(async () => {
-      const [firstName, lastName] = this.validateNames(
-        rawFirstName,
-        rawLastName,
-      );
-      this.validatePasswords(password, passwordConfirmation);
       const email = this.validateEmail(rawEmail);
+      const firstName = this.validateName(rawFirstName, "First name");
+      const lastName = this.validateName(rawLastName, "Last name");
       const phoneNumber = this.validatePhoneNumber(rawPhoneNumber);
+
+      if (password !== passwordConfirmation) {
+        throw new Error("Passwords do not match");
+      }
 
       await this.authService.register(
         {
+          email,
           firstName,
           lastName,
-          email,
           phoneNumber,
         },
         password,
       );
 
-      const currentUser = await this.authService.getUser();
-
-      const user = new User(currentUser, currentUser.roles);
-
+      const userData = await this.authService.getUser();
+      const user = new User(userData, userData.roles);
       this.view.setUser(user);
 
+      this.view.displayMessage("Account created successfully!");
       this.view.navigate("/");
-
-      this.view.displayMessage("Registration successful!");
     });
   }
 
-  private validateNames(firstName: string, lastName: string): [string, string] {
-    return [firstName, lastName];
-  }
+  private validateEmail(email: string): string {
+    const trimmedEmail = email.trim().toLowerCase();
 
-  private validatePasswords(password: string, passwordConfirmation: string) {
-    if (password !== passwordConfirmation) {
-      throw new PresenterError("Passwords do not match");
+    if (!trimmedEmail) {
+      throw new Error("Email is required");
     }
 
-    if (password.length < 8) {
-      throw new PresenterError("Password must be at least 8 characters long");
-    }
-
-    return password;
-  }
-
-  private validateEmail(email: string) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      throw new PresenterError("Invalid email address");
+    if (!emailRegex.test(trimmedEmail)) {
+      throw new Error("Invalid email format");
     }
 
-    return email;
+    return trimmedEmail;
   }
 
-  private validatePhoneNumber(phoneNumber: string) {
-    phoneNumber = phoneNumber.replace(/\D/g, "");
+  private validateName(name: string, fieldName: string): string {
+    const trimmedName = name.trim();
 
-    const phoneNumberRegex = /^\d{10}$/;
-
-    if (!phoneNumberRegex.test(phoneNumber)) {
-      throw new PresenterError("Invalid phone number");
+    if (!trimmedName) {
+      throw new Error(`${fieldName} is required`);
     }
 
-    return phoneNumber;
+    return trimmedName;
   }
 
-  onMount(user: User | null) {
-    if (user) {
-      this.view.displayError("You are already logged in");
-      this.view.navigate("/");
+  private validatePhoneNumber(phoneNumber: string): string {
+    const trimmedPhoneNumber = phoneNumber.trim().replace(/\D/g, "");
+
+    if (trimmedPhoneNumber.length !== 10) {
+      throw new Error("Phone number must be 10 digits");
     }
+
+    return trimmedPhoneNumber;
   }
 }

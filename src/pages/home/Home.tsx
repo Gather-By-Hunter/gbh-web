@@ -2,81 +2,49 @@ import { Header, HomeHeader, Main } from "@components/index.ts";
 import { Services } from "./Services.tsx";
 import { ServiceArea } from "./ServiceArea.tsx";
 import { Carousel } from "./Carousel.tsx";
-import { HomeStore } from "@stores/home/HomeStore.ts";
-
-// @ts-ignore
-const ASSET_BUCKET_URL: string = import.meta.env.VITE_ASSETS_BUCKET_URL;
+import { useEffect, useRef } from "react";
+import { useHomePresenter, useStores } from "@context/index.ts";
+import { useStore } from "@stores/useStore.ts";
+import { displayError, displayMessage } from "@pages/common.ts";
+import { useNavigate } from "react-router-dom";
+import { HomePresenter, type HomeView } from "@presenters/HomePresenter.ts";
 
 export const Home: React.FC = () => {
-  const featuredPhotos = new HomeStore([
-    {
-      id: 1,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_9338.jpg`,
-      alt: "",
-      objectPosition: "center 75%",
-    },
-    {
-      id: 2,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_9341.jpg`,
-      alt: "",
-      objectPosition: "center 80%",
-    },
-    {
-      id: 4,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_9514.jpg`,
-      alt: "",
-      objectPosition: "center 75%",
-    },
-    {
-      id: 5,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_9525.jpg`,
-      alt: "",
-      objectPosition: "center 50%",
-    },
-    {
-      id: 6,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1539.jpeg`,
-      alt: "",
-      objectPosition: "center 70%",
-    },
-    {
-      id: 7,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1540.jpeg`,
-      alt: "",
-      objectPosition: "center 50%",
-    },
-    {
-      id: 8,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1545.jpeg`,
-      alt: "",
-      objectPosition: "center 50%",
-    },
-    {
-      id: 9,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1546.jpeg`,
-      alt: "",
-      objectPosition: "center 50%",
-    },
-    {
-      id: 10,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1549.jpeg`,
-      alt: "",
-      objectPosition: "center 40%",
-    },
-    {
-      id: 11,
-      url: `${ASSET_BUCKET_URL}/photos/featured/IMG_1551.jpeg`,
-      alt: "",
-      objectPosition: "center 50%",
-    },
-  ]).featuredPhotos();
+  const stores = useStores();
+  const homeStore = useStore(stores.home);
+  const navigate = useNavigate();
+
+  const viewRef = useRef<HomeView>({
+    displayError,
+    displayMessage,
+    navigate,
+  });
+  const view = viewRef.current;
+  const presenter = useHomePresenter(view);
+
+  useEffect(() => {
+    presenter.loadFeaturedPhotos();
+  }, [presenter]);
 
   return (
     <>
       <HomeHeader />
       <Header />
       <Main>
-        <Carousel featuredPhotos={featuredPhotos} />
+        {homeStore.loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : homeStore.featuredPhotos.length > 0 ? (
+          <Carousel
+            featuredPhotos={homeStore.featuredPhotos}
+            mediaVersions={homeStore.mediaVersions}
+          />
+        ) : (
+          <div className="h-[85vh] bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 italic">
+            No featured photos found
+          </div>
+        )}
         <ServiceArea />
         <Services />
       </Main>

@@ -1,8 +1,9 @@
 import { SmallLogo } from "@components/index.ts";
 import { Link } from "react-router-dom";
 import { useState, useEffect, type ReactNode, useContext } from "react";
-import { User, Menu, X } from "lucide-react";
+import { Shield, User, Menu, X } from "lucide-react";
 import { AuthContext } from "@context/index.ts";
+import { Permission } from "@model/index.ts";
 
 const NavLink = ({
   to,
@@ -35,6 +36,37 @@ const UserIcon = ({ onClick }: { onClick?: () => void }) => {
       onClick={onClick}
     >
       <User
+        size={24}
+        strokeWidth={1.5}
+        className="text-gbh-black cursor-pointer"
+      />
+    </Link>
+  );
+};
+
+const AdminDashboardIcon = ({ onClick }: { onClick?: () => void }) => {
+  const { user } = useContext(AuthContext);
+
+  const canViewAdmin =
+    user?.hasPermission(Permission.ADMIN_DASHBOARD_VIEW) ||
+    user?.hasAnyPermission([
+      Permission.ADMIN_CATALOG_VIEW,
+      Permission.ADMIN_USERS_VIEW,
+      Permission.ADMIN_ROLES_VIEW,
+      Permission.ADMIN_ORDERS_VIEW,
+    ]);
+
+  if (!canViewAdmin) return null;
+
+  return (
+    <Link
+      to="/admin"
+      aria-label="Admin dashboard"
+      title="Admin dashboard"
+      className="p-2 rounded-full transition-colors border border-gbh-black hover:bg-gbh-gold"
+      onClick={onClick}
+    >
+      <Shield
         size={24}
         strokeWidth={1.5}
         className="text-gbh-black cursor-pointer"
@@ -89,6 +121,7 @@ export const Header = () => {
         <NavLink to="/about-us">About Us</NavLink>
       </nav>
       <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
+        <AdminDashboardIcon />
         <UserIcon />
         <Divider />
         <Link
@@ -124,6 +157,7 @@ export const Header = () => {
               About Us
             </NavLink>
             <div className="flex items-center space-x-4 pt-8">
+              <AdminDashboardIcon onClick={closeMenu} />
               <UserIcon onClick={closeMenu} />
               <Divider />
               <Link

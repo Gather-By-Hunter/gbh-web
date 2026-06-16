@@ -1,8 +1,8 @@
 import { Header, Main } from "@components/index.ts";
-import { AppContext, AuthContext } from "@context/index.ts";
-import type { User } from "@model/index.ts";
+import { AuthContext, useAccountPresenter } from "@context/index.ts";
+import type { User, IdLess } from "@model/index.ts";
 import { displayError, displayMessage } from "@pages/common.ts";
-import { AccountPresenter, AccountView } from "@presenters/AccountPresenter.ts";
+import type { AccountView } from "@presenters/AccountPresenter.ts";
 import { Pencil } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -70,7 +70,6 @@ const EditableField: React.FC<{
 };
 
 export const Account = () => {
-  const { services } = useContext(AppContext);
   const { user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -83,11 +82,11 @@ export const Account = () => {
 
   const view = viewRef.current;
 
-  const [presenter] = useState(() => new AccountPresenter(services, view));
+  const presenter = useAccountPresenter(view);
 
   useEffect(() => {
     presenter.onMount(user);
-  }, [user]);
+  }, [user, presenter]);
 
   if (!user) {
     return (
@@ -102,7 +101,7 @@ export const Account = () => {
     presenter.logout();
   };
 
-  const handleUpdateUser = async (data: Partial<Omit<User, "id">>) => {
+  const handleUpdateUser = async (data: Partial<IdLess<User>>) => {
     await presenter.updateUser(data);
   };
 

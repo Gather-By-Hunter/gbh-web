@@ -1,13 +1,14 @@
 {
     "name": "gather-by-hunter-web",
+    "packageManager": "pnpm@11.4.0",
     "main": "index.ts",
     "devDependencies": {
-        "@types/node": "^24.10.1",
-        "typescript": "^5.9.3"
+        "@types/node": "^25.9.3",
+        "typescript": "^6.0.3"
     },
     "dependencies": {
-        "@pulumi/aws": "^7.11.1",
-        "@pulumi/awsx": "^3.1.0",
-        "@pulumi/pulumi": "^3.207.0"
+        "@pulumi/aws": "^7.32.0",
+        "@pulumi/awsx": "^3.6.0",
+        "@pulumi/pulumi": "^3.246.0"
     }
 }

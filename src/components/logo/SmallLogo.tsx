@@ -1,5 +1,5 @@
-import { createImageComponent } from "../image/index.ts";
+import { createMediaComponent } from "../media/index.ts";
 
-export const SmallLogo = createImageComponent({
+export const SmallLogo = createMediaComponent({
   src: "/logo/gbh-small-logo.svg",
 });

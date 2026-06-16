@@ -1,7 +1,12 @@
-import { CreatePresenter, CreateField } from "./CreatePresenter.ts";
-import { ModelType } from "@repos/rental/ModelRepo.ts";
+import {
+  CreatePresenter,
+  CreateField,
+  CreateFormData,
+  getRequiredString,
+  getTags,
+} from "./CreatePresenter.ts";
 import { Services } from "@services/Services.ts";
-import { Category } from "@model/index.ts";
+import { ModelType } from "@model/index.ts";
 import { Id } from "@model/Id.ts";
 
 export class CategoryCreatePresenter implements CreatePresenter {
@@ -10,50 +15,69 @@ export class CategoryCreatePresenter implements CreatePresenter {
   getFields(): CreateField[] {
     return [
       { name: "name", displayName: "Name", type: "string", required: true },
-      { name: "description", displayName: "Description", type: "text", required: true },
+      {
+        name: "description",
+        displayName: "Description",
+        type: "text",
+        required: true,
+      },
+      { name: "tags", displayName: "Tags", type: "tags" },
     ];
   }
 
   getAllowedAssociations(): ModelType[] {
-    return [ModelType.CATEGORY, ModelType.PACKAGE, ModelType.PRODUCT, ModelType.IMAGE];
+    return [
+      ModelType.CATEGORY,
+      ModelType.PACKAGE,
+      ModelType.PRODUCT,
+      ModelType.MEDIA,
+    ];
   }
 
-  validate(data: any): string | null {
+  validate(data: CreateFormData): string | null {
     if (!data.name) return "Name is required";
     if (!data.description) return "Description is required";
     return null;
   }
 
-  async create(data: any, associations: Partial<Record<ModelType, Id[]>>): Promise<void> {
-    const category: Omit<Category, "id"> = {
-      name: data.name,
-      description: data.description,
+  async create(
+    data: CreateFormData,
+    associations: Partial<Record<ModelType, Id[]>>,
+  ): Promise<void> {
+    const category = {
+      name: getRequiredString(data, "name"),
+      description: getRequiredString(data, "description"),
+      tags: getTags(data),
     };
 
     const result = await this.services.categoryService.create(category);
-    const categoryId = (result as any).id;
+    const categoryId = result.id;
 
-    if (associations[ModelType.CATEGORY]) {
-      for (const subId of associations[ModelType.CATEGORY]!) {
-        await this.services.categoryService.addSubcategory(categoryId, subId);
+    const categories = associations[ModelType.CATEGORY];
+    if (categories) {
+      for (const catId of categories) {
+        await this.services.categoryService.addSubcategory(categoryId, catId);
       }
     }
 
-    if (associations[ModelType.PACKAGE]) {
-      for (const packageId of associations[ModelType.PACKAGE]!) {
-        await this.services.categoryService.addPackage(categoryId, packageId);
+    const packages = associations[ModelType.PACKAGE];
+    if (packages) {
+      for (const pkgId of packages) {
+        await this.services.categoryService.addPackage(categoryId, pkgId);
       }
     }
 
-    if (associations[ModelType.PRODUCT]) {
-      for (const productId of associations[ModelType.PRODUCT]!) {
-        await this.services.categoryService.addProduct(categoryId, productId);
+    const products = associations[ModelType.PRODUCT];
+    if (products) {
+      for (const prodId of products) {
+        await this.services.categoryService.addProduct(categoryId, prodId);
       }
     }
 
-    if (associations[ModelType.IMAGE]) {
-      for (const imageId of associations[ModelType.IMAGE]!) {
-        await this.services.categoryService.addImage(categoryId, imageId);
+    const media = associations[ModelType.MEDIA];
+    if (media) {
+      for (const imgId of media) {
+        await this.services.categoryService.addMedia(categoryId, imgId);
       }
     }
   }

@@ -1,41 +1,34 @@
 import type { HttpCommunicator } from "@api/HttpCommunicator.ts";
-import type { Role, UserData } from "@model/index.ts";
+import type {
+  PermissionName,
+  Role,
+  UserData,
+  IdLess,
+} from "@model/index.ts";
 
 export class AuthRepo {
   constructor(private httpCommunicator: HttpCommunicator) {}
 
-  async register(user: Omit<UserData, "id">, password: string) {
-    const { authToken } = await this.httpCommunicator.post<{
-      authToken: string;
-    }>("/auth/user", {
+  async register(user: IdLess<UserData>, password: string): Promise<void> {
+    await this.httpCommunicator.post<void>("/auth/user", {
       ...user,
       password,
     });
-
-    return authToken;
   }
 
-  async login(email: string, password: string) {
-    const { authToken } = await this.httpCommunicator.post<{
-      authToken: string;
-    }>("/auth/user/session", {
+  async login(email: string, password: string): Promise<void> {
+    await this.httpCommunicator.post<void>("/auth/user/session", {
       email,
       password,
     });
-
-    return authToken;
   }
 
   async logout() {
     await this.httpCommunicator.delete("/auth/user/session");
   }
 
-  async refresh() {
-    const { authToken } = await this.httpCommunicator.put<{
-      authToken: string;
-    }>("/auth/user/session");
-
-    return authToken;
+  async refresh(): Promise<void> {
+    await this.httpCommunicator.put<void>("/auth/user/session");
   }
 
   async getUser() {
@@ -46,7 +39,7 @@ export class AuthRepo {
     return user;
   }
 
-  async updateUser(user: Partial<Omit<UserData, "id">>, password?: string) {
+  async updateUser(user: Partial<IdLess<UserData>>, password?: string) {
     const payload: Record<string, string | number> = {
       ...user,
     };

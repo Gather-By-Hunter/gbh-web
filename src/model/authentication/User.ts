@@ -10,6 +10,11 @@ export interface UserData {
   email: string;
 }
 
+export interface UserJson extends UserData {
+  permissions: PermissionName[];
+  roles: Role[];
+}
+
 export class User implements UserData {
   id: Id;
   firstName: string;
@@ -54,7 +59,11 @@ export class User implements UserData {
     return this.permissions.has(permission);
   }
 
-  toJson(): UserData & { permissions: string[]; roles: Role[] } {
+  hasAnyPermission(permissions: PermissionName[]): boolean {
+    return permissions.some((permission) => this.permissions.has(permission));
+  }
+
+  toJson(): UserJson {
     return {
       id: this.id,
       firstName: this.firstName,
@@ -62,7 +71,7 @@ export class User implements UserData {
       phoneNumber: this.phoneNumber,
       email: this.email,
       permissions: Array.from(this.permissions).sort((a, b) =>
-        a.localeCompare(b)
+        a.localeCompare(b),
       ),
       roles: this.roles,
     };
