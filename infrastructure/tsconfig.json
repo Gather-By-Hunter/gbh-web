@@ -6,6 +6,7 @@
     "module": "nodenext",
     "esModuleInterop": true,
     "moduleResolution": "nodenext",
+    "types": ["node"],
     "sourceMap": true,
     "experimentalDecorators": true,
     "pretty": true,
